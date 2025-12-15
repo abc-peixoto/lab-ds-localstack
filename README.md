@@ -304,34 +304,9 @@ aws --endpoint-url=http://localhost:4566 lambda list-functions
 - **Amazon SNS**: Serviço de notificações em tópico
 - **Node.js**: Runtime das funções Lambda
 
-## 🐛 Troubleshooting
+## Video
 
-### LocalStack não inicia
-
-Certifique-se de que:
-- Docker está rodando
-- A porta 4566 não está em uso
-- Você tem permissões suficientes para executar Docker
-
-### Erro ao fazer deploy
-
-- Verifique se o LocalStack está rodando
-- Certifique-se de que todas as dependências foram instaladas (`npm install`)
-- Verifique os logs do LocalStack
-
-### Notificações SNS não funcionam
-
-- Verifique se o tópico SNS foi criado corretamente
-- Verifique se o subscriber Lambda tem permissão para ser invocado pelo SNS
-- Verifique os logs do subscriber Lambda
-
-## 📄 Licença
-
-Este projeto foi desenvolvido para fins educacionais.
-
-## 👥 Autores
-
-Desenvolvido como parte do Laboratório de Desenvolvimento de Aplicações Móveis e Distribuídas.
+[video](https://drive.google.com/file/d/15bS_AZwgrUmNkoGmOhP90ABnfVLxFNwj/view?usp=sharing)
 
 ---
 
