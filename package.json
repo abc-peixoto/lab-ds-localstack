@@ -1,0 +1,32 @@
+{
+  "name": "lab-ds-localstack-crud-sns",
+  "version": "1.0.0",
+  "description": "CRUD Serverless com Notificações SNS usando LocalStack",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "serverless deploy --stage local",
+    "remove": "serverless remove --stage local",
+    "logs": "serverless logs -f",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "serverless",
+    "localstack",
+    "aws",
+    "lambda",
+    "dynamodb",
+    "sns"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.1491.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "serverless": "^3.38.0",
+    "serverless-localstack": "^1.0.1",
+    "serverless-offline": "^13.3.0"
+  }
+}
+

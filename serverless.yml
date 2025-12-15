@@ -1,0 +1,143 @@
+service: crud-sns-serverless
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: ${opt:stage, 'local'}
+  environment:
+    STAGE: ${self:provider.stage}
+    ITEMS_TABLE: ${self:service}-items-${self:provider.stage}
+    SNS_TOPIC_ARN: 
+      Ref: ItemNotificationsTopic
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ITEMS_TABLE}"
+    - Effect: Allow
+      Action:
+        - sns:Publish
+      Resource:
+        Ref: ItemNotificationsTopic
+
+plugins:
+  - serverless-localstack
+  - serverless-offline
+
+custom:
+  localstack:
+    stages:
+      - local
+    host: http://localhost
+    edgePort: 4566
+    autostart: true
+    lambda:
+      mountCode: True
+    docker:
+      sudo: False
+
+resources:
+  Resources:
+    ItemsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.ITEMS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+
+    ItemNotificationsTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:service}-notifications-${self:provider.stage}
+        DisplayName: Item Notifications Topic
+
+    ItemNotificationsSubscription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        TopicArn:
+          Ref: ItemNotificationsTopic
+        Protocol: lambda
+        Endpoint:
+          Fn::GetAtt:
+            - NotificationSubscriberLambdaFunction
+            - Arn
+
+    NotificationSubscriberPermission:
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName:
+          Fn::GetAtt:
+            - NotificationSubscriberLambdaFunction
+            - Arn
+        Action: lambda:InvokeFunction
+        Principal: sns.amazonaws.com
+        SourceArn:
+          Ref: ItemNotificationsTopic
+
+  Outputs:
+    ItemsTableName:
+      Value: ${self:provider.environment.ITEMS_TABLE}
+    SnsTopicArn:
+      Value:
+        Ref: ItemNotificationsTopic
+
+functions:
+  createItem:
+    handler: src/handlers/createItem.handler
+    events:
+      - http:
+          path: items
+          method: post
+          cors: true
+
+  listItems:
+    handler: src/handlers/listItems.handler
+    events:
+      - http:
+          path: items
+          method: get
+          cors: true
+
+  getItem:
+    handler: src/handlers/getItem.handler
+    events:
+      - http:
+          path: items/{id}
+          method: get
+          cors: true
+
+  updateItem:
+    handler: src/handlers/updateItem.handler
+    events:
+      - http:
+          path: items/{id}
+          method: put
+          cors: true
+
+  deleteItem:
+    handler: src/handlers/deleteItem.handler
+    events:
+      - http:
+          path: items/{id}
+          method: delete
+          cors: true
+
+  notificationSubscriber:
+    handler: src/handlers/notificationSubscriber.handler
+
