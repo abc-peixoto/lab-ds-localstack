@@ -1,47 +1,28 @@
 /**
  * SNS utility functions for publishing notifications
  */
+const AWS = require("aws-sdk");
 
-const AWS = require('aws-sdk');
+function localEndpoint() {
+  const host = process.env.LOCALSTACK_HOSTNAME || "localhost";
+  return `http://${host}:4566`;
+}
+
+const isLocal = process.env.STAGE === "local" || process.env.IS_OFFLINE === "true";
 
 const sns = new AWS.SNS({
-  endpoint: process.env.IS_OFFLINE || process.env.STAGE === 'local' 
-    ? 'http://localhost:4566' 
-    : undefined,
-  region: process.env.AWS_REGION || 'us-east-1'
+  region: process.env.AWS_REGION || "us-east-1",
+  ...(isLocal ? { endpoint: localEndpoint() } : {}),
 });
 
-const publishNotification = async (topicArn, eventType, item) => {
-  try {
-    const message = {
-      eventType,
-      timestamp: new Date().toISOString(),
-      item: {
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        price: item.price,
-        category: item.category
-      }
-    };
-
-    const params = {
+async function publishNotification(topicArn, eventType, item) {
+  return sns
+    .publish({
       TopicArn: topicArn,
-      Message: JSON.stringify(message),
-      Subject: `Item ${eventType}: ${item.name}`
-    };
+      Subject: `ITEM_${eventType}`,
+      Message: JSON.stringify({ eventType, item }),
+    })
+    .promise();
+}
 
-    const result = await sns.publish(params).promise();
-    console.log('SNS notification published:', result.MessageId);
-    
-    return result;
-  } catch (error) {
-    console.error('Error publishing SNS notification:', error);
-    throw error;
-  }
-};
-
-module.exports = {
-  publishNotification
-};
-
+module.exports = { publishNotification };

@@ -1,18 +1,21 @@
-version: '3.8'
+version: "3.8"
 
 services:
   localstack:
-    container_name: localstack
+    container_name: localstack-main
     image: localstack/localstack:latest
     ports:
-      - "4566:4566"
-      - "4571:4571"
+      - "127.0.0.1:4566:4566"            # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
     environment:
-      - SERVICES=lambda,dynamodb,sns,apigateway
       - DEBUG=1
-      - DATA_DIR=/tmp/localstack/data
-      - DOCKER_HOST=unix:///var/run/docker.sock
+      - PERSISTENCE=1
+      - LAMBDA_RUNTIME_ENVIRONMENT_TIMEOUT=120
     volumes:
-      - "./.localstack:/tmp/localstack"
+      - "./.localstack:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
-
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "curl -fsS http://localhost:4566/_localstack/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30

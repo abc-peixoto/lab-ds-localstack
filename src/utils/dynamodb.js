@@ -2,21 +2,23 @@
  * DynamoDB utility functions
  */
 
-const AWS = require('aws-sdk');
+const AWS = require("aws-sdk");
+
+function localEndpoint() {
+  const host = process.env.LOCALSTACK_HOSTNAME || "localhost";
+  return `http://${host}:4566`;
+}
+
+const isLocal = process.env.STAGE === "local" || process.env.IS_OFFLINE === "true";
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient({
-  endpoint: process.env.IS_OFFLINE || process.env.STAGE === 'local'
-    ? 'http://localhost:4566'
-    : undefined,
-  region: process.env.AWS_REGION || 'us-east-1'
+  region: process.env.AWS_REGION || "us-east-1",
+  ...(isLocal ? { endpoint: localEndpoint() } : {}),
 });
 
-const getTableName = () => {
-  return process.env.ITEMS_TABLE || 'crud-sns-serverless-items-local';
-};
+function getTableName() {
+  return process.env.ITEMS_TABLE;
+}
 
-module.exports = {
-  dynamoDb,
-  getTableName
-};
+module.exports = { dynamoDb, getTableName };
 

@@ -13,8 +13,20 @@ module.exports.handler = async (event) => {
   try {
     let body;
     try {
-      body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
+      const raw = event.body;
+
+      const decoded =
+        event.isBase64Encoded
+          ? Buffer.from(raw || '', 'base64').toString('utf8')
+          : raw;
+
+      body = typeof decoded === 'string' ? JSON.parse(decoded) : decoded;
     } catch (e) {
+      console.error('Invalid JSON body:', {
+        isBase64Encoded: event.isBase64Encoded,
+        bodyType: typeof event.body,
+        body: event.body
+      });
       return error('Invalid JSON in request body', 400);
     }
 
@@ -55,4 +67,5 @@ module.exports.handler = async (event) => {
     return error('Internal server error', 500);
   }
 };
+
 

@@ -18,9 +18,14 @@ module.exports.handler = async (event) => {
 
     let body;
     try {
-      body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
+      const raw = event.body || "";
+      const decoded = event.isBase64Encoded
+        ? Buffer.from(raw, "base64").toString("utf8")
+        : raw;
+
+      body = typeof decoded === "string" ? JSON.parse(decoded) : decoded;
     } catch (e) {
-      return error('Invalid JSON in request body', 400);
+      return error("Invalid JSON in request body", 400);
     }
 
     const validation = validateUpdateItem(body);
@@ -96,4 +101,5 @@ module.exports.handler = async (event) => {
     return error('Internal server error', 500);
   }
 };
+
 

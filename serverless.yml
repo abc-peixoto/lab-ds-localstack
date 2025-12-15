@@ -1,17 +1,18 @@
 service: crud-sns-serverless
 
-frameworkVersion: '3'
+frameworkVersion: "3"
 
 provider:
   name: aws
   runtime: nodejs18.x
   region: us-east-1
-  stage: ${opt:stage, 'local'}
+  stage: ${opt:stage, "local"}
   environment:
     STAGE: ${self:provider.stage}
     ITEMS_TABLE: ${self:service}-items-${self:provider.stage}
-    SNS_TOPIC_ARN: 
+    SNS_TOPIC_ARN:
       Ref: ItemNotificationsTopic
+
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -22,7 +23,7 @@ provider:
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
       Resource:
-        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ITEMS_TABLE}"
+        - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ITEMS_TABLE}
     - Effect: Allow
       Action:
         - sns:Publish
@@ -35,48 +36,25 @@ plugins:
 
 custom:
   localstack:
+    autostart: false
     stages:
       - local
-    host: http://localhost
+    host: http://localhost.localstack.cloud
     edgePort: 4566
-    autostart: true
+
     lambda:
-      mountCode: True
+      mountCode: false
     docker:
-      sudo: False
+      sudo: false
 
 resources:
   Resources:
-    ItemsTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:provider.environment.ITEMS_TABLE}
-        AttributeDefinitions:
-          - AttributeName: id
-            AttributeType: S
-        KeySchema:
-          - AttributeName: id
-            KeyType: HASH
-        BillingMode: PAY_PER_REQUEST
-        StreamSpecification:
-          StreamViewType: NEW_AND_OLD_IMAGES
 
     ItemNotificationsTopic:
       Type: AWS::SNS::Topic
       Properties:
         TopicName: ${self:service}-notifications-${self:provider.stage}
         DisplayName: Item Notifications Topic
-
-    ItemNotificationsSubscription:
-      Type: AWS::SNS::Subscription
-      Properties:
-        TopicArn:
-          Ref: ItemNotificationsTopic
-        Protocol: lambda
-        Endpoint:
-          Fn::GetAtt:
-            - NotificationSubscriberLambdaFunction
-            - Arn
 
     NotificationSubscriberPermission:
       Type: AWS::Lambda::Permission
@@ -89,6 +67,19 @@ resources:
         Principal: sns.amazonaws.com
         SourceArn:
           Ref: ItemNotificationsTopic
+
+    ItemNotificationsSubscription:
+      Type: AWS::SNS::Subscription
+      DependsOn:
+        - NotificationSubscriberPermission
+      Properties:
+        TopicArn:
+          Ref: ItemNotificationsTopic
+        Protocol: lambda
+        Endpoint:
+          Fn::GetAtt:
+            - NotificationSubscriberLambdaFunction
+            - Arn
 
   Outputs:
     ItemsTableName:
@@ -140,4 +131,3 @@ functions:
 
   notificationSubscriber:
     handler: src/handlers/notificationSubscriber.handler
-
